@@ -364,7 +364,29 @@ public class GenericTimeExpressionPatterns implements TimeExpressionPatterns {
               }
             }
     ));
+ 
+    env.bind("StrToNum", new Expressions.PrimitiveValue<ValueFunction>(
+            Expressions.TYPE_FUNCTION,
+            new ValueFunctions.NamedValueFunction("StrToNum") {
+              public boolean checkArgs(List<Value> in) {
+                if (in.size() != 1) { return false; }
+                return true;
+              }
+              public Value apply(Env env, List<Value> in) {
+                Value v = in.get(0);
+               System.out.println(v);
+                if (v instanceof MatchedExpression) {
+                  v = ((MatchedExpression) v).getValue();
+                }
+                String s = (String) v.get();
+                Number n = (Number) Integer.parseInt(s);
+                Expressions.PrimitiveValue<Number> ex = new Expressions.PrimitiveValue<Number>(Expressions.TYPE_NUMBER, n);
+                return ex;
+              }
+            }
+    ));
   }
+
 
   public int determineRelFlags(CoreMap annotation, TimeExpression te)
   {

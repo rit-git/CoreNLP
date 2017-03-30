@@ -124,6 +124,31 @@
   }
   $BasicOrdTerm = CreateRegex(Keys(BASIC_ORDINAL_MAP))
 
+
+  TIMEUNIT_PERIODIC_MAP = {
+      "year": YEARLY,
+      "yr": YEARLY,
+      "month": MONTHLY,
+      "mo": MONTHLY,
+      "day": DAILY,
+      "hour": HOURLY,
+      "hr": HOURLY,
+      "week": WEEKLY,
+      "wk": WEEKLY,
+      "quarter": QUARTERLY,
+      "century": TemporalCompose(MULTIPLY, YEARLY, 100),
+      "centuries": TemporalCompose(MULTIPLY, YEARLY, 100)
+  }
+
+  FREQ_EXCEPTION_MAP = { 
+    "once": 1, 
+    "twice": 2,
+    "thrice": 3
+  }
+
+$FREQ_EXCEPTION = CreateRegex(Keys(FREQ_EXCEPTION_MAP))
+
+
   ########################################################################################################################
 
   ENV.defaults["stage"] = 0
@@ -206,6 +231,31 @@
   { pattern: ( /.*($PeriodicSetRegex)/ ),
     matchWithResults: TRUE,
     action: Tag($0, "PeriodicSet", PERIODIC_SET[Lowercase($$0.matchResults[0].word.group(1))]) }
+
+  ########################################################################################################################
+
+  ## Frequency expression
+
+  # e.g. five tiems a week
+{   ruleType: "tokens",
+    pattern: ( $INT /times?/ /(a|per|\/)/ /$TEUnits/  ),
+    result: TemporalCompose(MULTIPLY, TIMEUNIT_PERIODIC_MAP[$0[-1].word], BASIC_NUMBER_MAP[$0[0].word])
+}
+
+{   ruleType: "tokens",
+    pattern: ( $INT /times?/ /(a|per|\/)/ /$TEUnits/  ),
+    result: TemporalCompose(MULTIPLY, TIMEUNIT_PERIODIC_MAP[$0[-1].word], $0[0].numcompvalue)
+}
+
+{   ruleType: "tokens",
+    pattern: ( /$FREQ_EXCEPTION/ /(a|per|\/)/ /$TEUnits/  ),
+    result: TemporalCompose(MULTIPLY, TIMEUNIT_PERIODIC_MAP[$0[-1].word], FREQ_EXCEPTION_MAP[$0[0].word])
+}
+
+# e.g. 3/week
+{  ruleType: "text",
+pattern: /(\d+)(\/)($TEUnits)/ ,
+result: TemporalCompose(MULTIPLY, TIMEUNIT_PERIODIC_MAP["week"], StrToNum($1) ) }
 
   ########################################################################################################################
 
